@@ -91,12 +91,14 @@ resource "google_compute_region_autoscaler" "wpex" {
   }
 }
 
+//Reserve Static IP
 resource "google_compute_global_address" "sip" {
   name = "vino-static-ip"
   ip_version   = "IPV4"
   address_type = "EXTERNAL"
 }
 
+//Load Balancer 
 resource "google_compute_http_health_check" "hc" {
   name         = "lb-health-check"
   request_path = "/health"
@@ -139,6 +141,7 @@ resource "google_compute_target_http_proxy" "proxy" {
   url_map = google_compute_url_map.mapping.self_link
 }
 
+//SQL instance
 resource "google_sql_database_instance" "wp-ins" {
   name   = "vino-wpdb-inst"
   database_version = "MYSQL_5_6"
