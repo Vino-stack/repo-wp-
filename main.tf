@@ -1,4 +1,5 @@
 provider "google"{
+  credentials="SAKEY.json"
   project ="gcp-training-01-303001"
   region ="us-central1"
   zone ="us-central1-c"
