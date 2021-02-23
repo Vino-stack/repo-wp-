@@ -127,7 +127,6 @@ resource "google_compute_global_forwarding_rule" "lbfw" {
   ip_address = google_compute_global_address.sip.address
   port_range = "80"
   target     = google_compute_target_http_proxy.proxy.self_link
-  all_ports  = true
 }
 
 resource "google_compute_url_map" "mapping" {
