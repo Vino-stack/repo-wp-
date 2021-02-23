@@ -1,3 +1,5 @@
+script in install.sh :
+
 1.Installing LAMP Stack on Server
 sudo apt-get install apache2 apache2-utils php libapache2-mod-php php-mysql php-curl php-gd php-intl php-mbstring php-soap php-xml php-xmlrpc php-zip mariadb-server mariadb-client
 
