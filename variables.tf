@@ -1,4 +1,4 @@
-variable "project" {
+variable "gcp_project_id" {
   type = string
   description = "The project ID to create the resources in."
 }
@@ -7,7 +7,7 @@ variable "project" {
 # These variables have defaults, but can be overridden 
 variable "region" {
   type = string
-  default = ["us-central1"]
+  #default = ["us-central1"]
 }
 
 variable "zone" {
