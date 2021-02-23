@@ -1,25 +1,25 @@
 provider "google"{
   credentials="SAKEY.json"
-  project ="gcp-training-01-303001"
-  region ="us-central1"
-  zone ="us-central1-c"
+  project =var.gcp_project_id
+  region =var.region
+  zone =var.zone
 }
 
 resource "google_compute_network" "vpc-net"{
-  name="vino-terraform-vpc"
+  name=var.vpc-name
   auto_create_subnetworks = "false"
   routing_mode = "REGIONAL"
 }
 resource "google_compute_subnetwork" "vpc-subnet" {
-  name = "vino-terraform-subnet"
-  region = "us-central1"
+  name = var.vpc-subnet
+  region = var.region
   ip_cidr_range="10.26.2.0/24"
   depends_on    = [google_compute_network.vpc-net]
-  network= "vino-terraform-vpc"
+  network= var.vpc-name
 }
 resource "google_compute_firewall" "vpcf" {
-  name    = "vino-terraform-firewall"
-  network = "vino-terraform-vpc"
+  name    = var.vpc-firewall
+  network = var.vpc-name
 
   allow {
     protocol = "icmp"
@@ -33,22 +33,22 @@ resource "google_compute_firewall" "vpcf" {
 }
 
 resource "google_compute_instance_template" "tmp1" {
-  name = "vino-mig-tmp1"
-  machine_type            = "f1-micro"
+  name = var.mig-tmp-name
+  machine_type            = var.vm-machine_type
   metadata_startup_script = file("wp.sh")
-  region                  = "us-central1"
-  tags = [ "http-server","http","https","allow-iap-ssh","allow-http"]
+  region                  = var.region
+  tags = [ "http-server"]
 
   disk {
-    source_image = "debian-cloud/debian-9"
+    source_image = var.vm_source_image
     disk_size_gb = 10
     auto_delete  = true
     boot         = true
   }
 
   network_interface {
-    network = "vino-terraform-vpc"
-   subnetwork = "vino-terraform-subnet"
+    network = var.vpc-name
+   subnetwork = var.vpc-subnet
    access_config {
         }
   }
@@ -56,9 +56,9 @@ resource "google_compute_instance_template" "tmp1" {
 }
 
 resource "google_compute_region_instance_group_manager" "mig-grp" {
-  name               = "vino-mig"
-  region             = "us-central1"
-  base_instance_name = "vino-mig-ins"
+  name               = var.mig-name
+  region             = var.region
+  base_instance_name = var.base_ins_name
   target_size        = 2
 
 version {
@@ -77,8 +77,8 @@ instance_template  = google_compute_instance_template.tmp1.id
 }
 
 resource "google_compute_region_autoscaler" "wpex" {
-  name   = "my-region-autoscaler"
-  region = "us-central1"
+  name   = var.mig_autoscaler
+  region = var.region
   target = google_compute_region_instance_group_manager.mig-grp.id
 
   autoscaling_policy {
@@ -94,25 +94,23 @@ resource "google_compute_region_autoscaler" "wpex" {
 
 //Reserve Static IP
 resource "google_compute_global_address" "sip" {
-  name = "vino-static-ip"
+  name = var.external_IP_name
   ip_version   = "IPV4"
   address_type = "EXTERNAL"
 }
 
 //Load Balancer 
 resource "google_compute_http_health_check" "hc" {
-  name         = "lb-health-check"
+  name         = var.hc_name
   request_path = "/health"
 
   timeout_sec        = 5
   check_interval_sec = 5
-  tcp_health_check {
-    port = "80"
-  }
+  port = "80"
 }
 
 resource "google_compute_backend_service" "backend" {
-  name             = "wp-backend"
+  name             = var.lb-backend-name
   protocol         = "HTTP"
   timeout_sec      = 10
   session_affinity = "NONE"
@@ -125,7 +123,7 @@ resource "google_compute_backend_service" "backend" {
 }
 
 resource "google_compute_global_forwarding_rule" "lbfw" {
-  name       = "vino-lb-fw-rule"
+  name       = var.fw_rule 
   ip_address = google_compute_global_address.sip.address
   port_range = "80"
   target     = google_compute_target_http_proxy.proxy.self_link
@@ -133,22 +131,22 @@ resource "google_compute_global_forwarding_rule" "lbfw" {
 }
 
 resource "google_compute_url_map" "mapping" {
-  name        = "lb-url-map"
+  name        = var.lb-url-map
   default_service = google_compute_backend_service.backend.self_link
 }
 
 resource "google_compute_target_http_proxy" "proxy" {
-  name    = "lb-proxy"
+  name    = var.proxy-name
   url_map = google_compute_url_map.mapping.self_link
 }
 
 //SQL instance
 resource "google_sql_database_instance" "wp-ins" {
-  name   = "vino-wpdb-inst"
+  name   = var.sql-ins-name
   database_version = "MYSQL_5_6"
   
   settings {
-    tier              = "db-f1-micro"
+    tier              = var.machine-tier
     availability_type = "REGIONAL"
     disk_size         = "10"
 
