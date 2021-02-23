@@ -19,7 +19,7 @@ resource "google_compute_subnetwork" "vpc-subnet" {
 }
 resource "google_compute_firewall" "vpcf" {
   name    = var.vpc-firewall
-  network = var.vpc-name
+  network = google_compute_network.vpc-net.id
 
   allow {
     protocol = "icmp"
@@ -48,7 +48,7 @@ resource "google_compute_instance_template" "tmp1" {
 
   network_interface {
     network = var.vpc-name
-   subnetwork = var.vpc-subnet
+   subnetwork = google_compute_subnetwork.vpc-subnet.id
    access_config {
         }
   }
@@ -59,7 +59,7 @@ resource "google_compute_region_instance_group_manager" "mig-grp" {
   name               = var.mig-name
   region             = var.region
   base_instance_name = var.base_ins_name
-  target_size        = 2
+  target_size        = 1
 
 version {
 instance_template  = google_compute_instance_template.tmp1.id
